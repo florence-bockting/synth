@@ -7,6 +7,7 @@ output: html_document
 ## Using quarto for writing manuscripts
 
 + install `quarto` following the instructions [here](https://quarto.org/docs/get-started/)
++ for creating pdf documents, see notes [here](https://quarto.org/docs/output-formats/pdf-basics.html)
 
 **Preview a document**
 

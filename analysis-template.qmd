@@ -1,0 +1,142 @@
+---
+title: "Analysis Document"
+format: 
+  html:
+    theme: minty
+    toc: true
+    toc-location: left
+    number-sections: true 
+    code-fold: true
+    warning: false
+    message: false
+---
+
+```{r setup}
+library(readxl)
+library(vdemdata)
+library(devtools)
+
+# load functions from R file
+source("R/analysis.R")
+source("R/plotting.R")
+```
+
+## Introduction
++ analyse [v-dem](https://v-dem.net/data/the-v-dem-dataset/) data using the [tidysynth](https://github.com/edunford/tidysynth) library.
+
+## Read datasets
+
+```{r data-events}
+# read external data
+d_events <- readxl::read_excel("data/events.xlsx")
+d_events %>% head()
+```
+
+
+```{r data-vdem}
+# load vdem-panel data
+vdem_panel <- create_panel(
+  time_period = c(1980, 2024),
+  vdem_dataset = vdemdata::vdem)
+vdem_panel %>% head()
+```
+
+## Check missing values
+
+```{r check-missings}
+countries_with_NA = completeness_check(
+  vdem_panel, 
+  time_period=c(1980, 2006)
+)
+
+plot_missings_countries(
+  countries_with_NA, 
+  save_plot=TRUE, 
+  output_folder="plots", 
+  file_name="missing_values_plot.png", 
+  figsize=c(6,4)
+)
+```
+
+## Main analysis
+
+```{r run-analysis}
+#| code-fold: false
+
+selected_countries <- countries_with_NA %>%
+  filter(has_missing == FALSE) %>%
+  pull(unit)
+
+scm_brazil <- generate_synth_control(
+  vdem_panel = vdem_panel,
+  country = "Brazil",
+  intervention_year = 2006,
+  time_period = c(1980, 2006),
+  time_period_optim = c(1980, 2006),
+  list_countries = selected_countries[1:50]
+)
+```
+
+## Evaluation
+
+Trends in the pre-intervention period should map closely onto one another.
+
+```{r plot-trends}
+
+plot_vdem(
+  scm_brazil, 
+  func=plot_trends, 
+  file_name="trends.png", 
+  save_plot=TRUE, 
+  figsize=c(6,4)
+)
+```
+
+Capture the causal quantity (i.e. the difference between the observed and counterfactual).
+
+```{r plot-differences}
+plot_vdem(scm_brazil, func=plot_differences, 
+          file_name="differences.png", 
+          save_plot=TRUE, figsize=c(6,4))
+```
+
+Examine the weighting of the units and variables in the fit. This allows one to see which cases were used, in part, to generate the synthetic control.
+
+```{r plot-weights}
+plot_vdem(
+  scm_brazil, 
+  func=plot_weights, 
+  file_name="weights.png", 
+  save_plot=TRUE, 
+  figsize=c(10,8)
+)
+```
+
+How comparable is the synthetic control to the observed covariates of the treated unit?
+
+```{r tab-balance}
+scm_brazil %>% tidysynth::grab_balance_table()
+```
+
+## Inference
+
+```{r plot-placebos}
+plot_vdem(
+  scm_brazil, 
+  func=plot_placebos, 
+  file_name="placebos.png", 
+  save_plot=TRUE, 
+  figsize=c(10,8)
+)
+```
+
+```{r tab-significance}
+scm_brazil %>% tidysynth::grab_significance()
+```
+
+## Reproducibility
+```{r}
+#| collapse: false
+
+devtools::session_info()
+```

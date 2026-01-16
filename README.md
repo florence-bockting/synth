@@ -4,6 +4,24 @@ output: html_document
 ---
 
 
+## Using quarto for writing manuscripts
+
++ install `quarto` following the instructions [here](https://quarto.org/docs/get-started/)
+
+**Preview a document**
+
+```
+# type the following in the terminal
+quarto preview analysis-template.qmd
+```
+
+**Render the final document**
+
+```
+# type the following in the terminal
+quarto render analysis-template.qmd
+```
+
 ## Working with environments
 
 ```
